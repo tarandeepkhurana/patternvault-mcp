@@ -137,12 +137,6 @@ The FastMCP entrypoint is:
 src/patternvault_mcp/server.py:mcp
 ```
 
-The ASGI app is also available as:
-
-```text
-src/patternvault_mcp/server.py:app
-```
-
 ## Development Checks
 
 Run linting:
