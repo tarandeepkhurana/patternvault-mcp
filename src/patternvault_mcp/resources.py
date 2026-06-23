@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 from fastmcp import FastMCP
 
+from patternvault_mcp.pattern_docs import list_docs, read_doc
 from patternvault_mcp.settings import Settings
-
-
-README_PATTERN = "*.md"
 
 
 def register_resources(mcp: FastMCP, settings: Settings) -> None:
@@ -30,60 +27,33 @@ def register_resources(mcp: FastMCP, settings: Settings) -> None:
     def readmes_index() -> str:
         resources = [
             {
-                "slug": _slug_for_file(path),
-                "title": _title_for_file(path),
-                "uri": _uri_for_file(path),
-                "filename": path.name,
+                "slug": doc.slug,
+                "title": doc.title,
+                "uri": doc.uri,
+                "filename": doc.filename,
             }
-            for path in _iter_readme_files(readmes_dir)
+            for doc in list_docs(readmes_dir)
         ]
         return json.dumps({"resources": resources}, indent=2)
 
-    for path in _iter_readme_files(readmes_dir):
-        _register_readme_resource(mcp, path)
+    for doc in list_docs(readmes_dir):
+        _register_readme_resource(mcp, doc)
 
 
-def _register_readme_resource(mcp: FastMCP, path: Path) -> None:
-    slug = _slug_for_file(path)
-    uri = _uri_for_file(path)
-
+def _register_readme_resource(mcp: FastMCP, doc) -> None:
     def read_readme() -> str:
-        return path.read_text(encoding="utf-8")
+        return read_doc(doc)
 
-    read_readme.__name__ = f"readme_{_python_identifier(slug)}"
+    read_readme.__name__ = f"readme_{_python_identifier(doc.slug)}"
 
     mcp.resource(
-        uri,
+        doc.uri,
         name=read_readme.__name__,
-        title=_title_for_file(path),
-        description=f"PatternVault Markdown resource from {path.name}.",
+        title=doc.title,
+        description=f"PatternVault Markdown resource from {doc.filename}.",
         mime_type="text/markdown",
         tags={"patternvault", "readmes"},
     )(read_readme)
-
-
-def _iter_readme_files(readmes_dir: Path) -> list[Path]:
-    if not readmes_dir.exists():
-        return []
-
-    return sorted(
-        path
-        for path in readmes_dir.glob(README_PATTERN)
-        if path.is_file() and not path.name.startswith(".")
-    )
-
-
-def _uri_for_file(path: Path) -> str:
-    return f"patternvault://readmes/{_slug_for_file(path)}"
-
-
-def _slug_for_file(path: Path) -> str:
-    return path.stem.lower().replace("_", "-")
-
-
-def _title_for_file(path: Path) -> str:
-    title = re.sub(r"^\d+[-_ ]*", "", path.stem)
-    return title.replace("-", " ").replace("_", " ").title()
 
 
 def _python_identifier(value: str) -> str:

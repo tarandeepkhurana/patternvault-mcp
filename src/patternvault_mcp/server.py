@@ -5,6 +5,7 @@ from fastmcp import FastMCP
 from patternvault_mcp.auth import build_auth_provider
 from patternvault_mcp.resources import register_resources
 from patternvault_mcp.settings import get_settings
+from patternvault_mcp.tools import register_tools
 
 
 settings = get_settings()
@@ -20,5 +21,6 @@ mcp = FastMCP(
 )
 
 register_resources(mcp, settings)
+register_tools(mcp, settings)
 
 app = mcp.http_app(path=settings.mcp_path, stateless_http=settings.stateless_http)
